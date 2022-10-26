@@ -2,7 +2,7 @@ import pymongo as pyM
 from pprint import pprint
 
 # Conectando ao MongoDB / Conecta ao cluster
-client = pyM.MongoClient("mongodb+srv://brenocampos:pymongo@cluster0.t3wnq40.mongodb.net/?retryWrites=true&w=majority") # string retirada do mongodb atlas
+client = pyM.MongoClient("mongodb connection string") # string retirada do mongodb atlas
 
 # Buscando coleções
 db = client.clientes # cria o db chaamado 'clientes'
