@@ -1,9 +1,13 @@
+from matplotlib.pyplot import connect
 from sqlalchemy import (
-    create_engine, Column, Integer, String, inspect
+    create_engine, Column, Integer, String, inspect, ForeignKey, select, func
     )
 from sqlalchemy.orm import (
     declarative_base, relationship, Session
 )
+
+
+# Criando as tabelas com a herança da classe Base
 
 Base = declarative_base()
 engine = create_engine('sqlite:///memory')
@@ -17,19 +21,22 @@ class Cliente(Base):
     id = Column(Integer, primary_key=True)
     nome = Column(String)
     cpf = Column(String(9))
-    endereco = Column(String(9))
+    endereco = relationship("Conta", back_populates="cliente")
 
 
-class Endereco(Base):
+class Conta(Base):
     """
         Cria a tabela endereço com o sqlalchemy
     """
     __tablename__ = "conta"
     id = Column(Integer, primary_key=True)
-    tipo = Column(String)
+    tipo = Column(String, nullable=True)
     agencia = Column(String)
-    num = Column(Integer)
-    id_cliente = relationship("Cliente", back_populates="id")
+    num = Column(Integer, nullable=True)
+    id_cliente = Column(Integer, ForeignKey("cliente.id"), nullable=False)
+
+    cliente = relationship("Cliente", back_populates="endereco")
+
 
 def cria_tabelas():
     """
@@ -38,22 +45,49 @@ def cria_tabelas():
     Base.metadata.create_all(engine)
 
 
-cria_tabelas()
+# cria_tabelas()
 
-insp = inspect(engine)
-print(insp.get_table_names())
+# insp = inspect(engine)
+# print(insp.get_table_names())
+
+# Inserindo alguns dados
 
 with Session(engine) as session:
     breno = Cliente(
-        nome="Breno",
-        fullname="Breno Campos",
-        address=[Address(email_address='brenobcampos@gmail.com')]
+        nome="Breno Campos",
+        cpf="123456",
+        endereco = [Conta(agencia='0001')]
     )
-    sandy = User(
-        name="Sandy",
-        fullname="Sandy Alves",
-        address=[Address(email_address="sandyalves@gmail.com"), Address(email_address="sandy@gmail.com")]
+    simone = Cliente(
+        nome="Simone Campos",
+        cpf="654321",
+        endereco=[Conta(agencia='0001')]
     )
-    pedro = User(
-        name="Pedro",
-        fullname="Pedro Lucas")
+    valdo = Cliente(
+        nome="Valdo Campos",
+        cpf="456123",
+        endereco=[Conta(agencia='0001')]
+    )
+
+session.add_all([breno, simone, valdo])
+
+session.commit()
+
+# print(select(Cliente))
+stmt = select(Cliente)
+
+connection = engine.connect()
+results = connection.execute(stmt).fetchall()
+
+for result in results:
+    print(result)
+
+stmt_count = select(func.count('*')).select_from(Cliente)
+results = connection.execute(stmt_count).fetchall()
+for result in results:
+    print(result)
+
+stmt_where = select(Cliente).where(Conta.id.in_([2]))
+results = connection.execute(stmt_where).fetchall()
+for result in results:
+    print(result)
